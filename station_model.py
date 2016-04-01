@@ -162,7 +162,7 @@ model.add(Dropout(0.2))
 model.add(Dense(min_spread, W_regularizer=l2(0.01), init='glorot_normal'))
 model.add(Activation('softmax'))
 
-rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-06)
+rmsprop = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-06)
 
 model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
 model.fit(min_train_X, min_train_y, batch_size=2048, nb_epoch=1000,
