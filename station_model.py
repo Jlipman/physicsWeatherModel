@@ -66,7 +66,7 @@ for i, day in enumerate(days_list):
 
 for i, day in enumerate(days_list):
     days_list[i] = (day[0], round(day[1]), round(day[2]))
-    print(days_list[i])
+    # print(days_list[i])
 
 num_days = len(days_list)
 # print(num_days)
@@ -154,5 +154,5 @@ model.add(Activation('softmax'))
 rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-06)
 
 model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
-model.fit(min_train_X, min_train_y, batch_size=128, nb_epoch=1,
+model.fit(min_train_X, min_train_y, batch_size=128, nb_epoch=100,
           validation_split=0.1, show_accuracy=True)
