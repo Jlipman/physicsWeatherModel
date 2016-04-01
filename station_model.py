@@ -1,5 +1,9 @@
 import numpy as np
 import h5py
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation, Dropout
+from keras.layers.recurrent import LSTM
+from keras.optimizers import RMSprop
 
 with open('chicago_summaries.dly') as file:
     text = file.read()
@@ -136,3 +140,19 @@ for data, name in zip(dataset, names):
     h5f = h5py.File(name + '.h5', 'w')
     h5f.create_dataset(name, data=data)
     h5f.close()
+
+print('Build min model...')
+model = Sequential()
+model.add(LSTM(512, return_sequences=True, input_shape=(timesteps,
+                                                        min_spread)))
+model.add(Dropout(0.2))
+model.add(LSTM(512, return_sequences=False))
+model.add(Dropout(0.2))
+model.add(Dense(min_spread))
+model.add(Activation('softmax'))
+
+rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-06)
+
+model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
+model.fit(min_train_X, min_train_y, batch_size=128, nb_epoch=1,
+          validation_split=0.1, show_accuracy=True)
