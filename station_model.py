@@ -4,6 +4,8 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 from keras.optimizers import RMSprop
+from keras.regularizers import l2  # , activity_l2
+from keras.layers.advanced_activations import LeakyReLU
 
 with open('chicago_summaries.dly') as file:
     text = file.read()
@@ -143,12 +145,23 @@ for data, name in zip(dataset, names):
 
 print('Build min model...')
 model = Sequential()
-model.add(LSTM(512, return_sequences=True, input_shape=(timesteps,
-                                                        min_spread)))
+
+model.add(LSTM(512, return_sequences=True,
+               input_shape=(timesteps, min_spread), init='glorot_normal',
+               W_regularizer=l2(0.01)))
+model.add(LeakyReLU(alpha=0.3))
 model.add(Dropout(0.2))
-model.add(LSTM(512, return_sequences=False))
+
+model.add(LSTM(512, return_sequences=False, init='glorot_normal',
+               W_regularizer=l2(0.01)))
+model.add(LeakyReLU(alpha=0.3))
 model.add(Dropout(0.2))
-model.add(Dense(min_spread))
+
+model.add(Dense(min_spread, W_regularizer=l2(0.01), init='glorot_normal'))
+model.add(LeakyReLU(alpha=0.3))
+model.add(Dropout(0.2))
+
+model.add(Dense(min_spread, W_regularizer=l2(0.01), init='glorot_normal'))
 model.add(Activation('softmax'))
 
 rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-06)
