@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 
 with open('chicago_summaries.dly') as file:
     text = file.read()
@@ -74,10 +75,10 @@ max_max = max(maxs)
 
 min_spread = max_min - min_min + 1
 max_spread = max_max - min_max + 1
-print('Min min: ' + str(min_min))
-print('Max min: ' + str(max_min))
-print('Min max: ' + str(min_max))
-print('Max max: ' + str(max_max))
+# print('Min min: ' + str(min_min))
+# print('Max min: ' + str(max_min))
+# print('Min max: ' + str(min_max))
+# print('Max max: ' + str(max_max))
 
 print('Min spread: ' + str(min_spread))
 print('Max spread: ' + str(max_spread))
@@ -113,7 +114,25 @@ def get_one_hot_index(vec):
 # print(min_y[0, :])
 # print(max_X[0, :, :])
 # print(max_y[0, :])
-for i in range(timesteps):
-    print(get_one_hot_index(min_X[0, i, :]) + min_min)
-print(get_one_hot_index(min_y[0, :]) + min_min)
-print(days_list[0][2])
+
+split = num_days/4
+
+min_train_X = min_X[:-split, :, :]
+min_train_y = min_y[:-split, :]
+min_test_X = min_X[-split:, :, :]
+min_test_y = min_y[-split:, :]
+
+max_train_X = max_X[:-split, :, :]
+max_train_y = max_y[:-split, :]
+max_test_X = max_X[-split:, :, :]
+max_test_y = max_y[-split:, :]
+
+dataset = [min_train_X, min_train_y, min_test_X, min_test_y,
+           max_train_X, max_train_y, max_test_X, max_test_y]
+names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
+         'max_train_X', 'max_train_y', 'max_test_X', 'max_test_y']
+
+for data, name in zip(dataset, names):
+    h5f = h5py.File(name + '.h5', 'w')
+    h5f.create_dataset(name, data=data)
+    h5f.close()
