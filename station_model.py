@@ -147,13 +147,11 @@ print('Build min model...')
 model = Sequential()
 
 model.add(LSTM(512, return_sequences=True,
-               input_shape=(timesteps, min_spread), init='glorot_normal',
-               W_regularizer=l2(0.01)))
+               input_shape=(timesteps, min_spread), init='glorot_normal'))
 model.add(LeakyReLU(alpha=0.3))
 model.add(Dropout(0.2))
 
-model.add(LSTM(512, return_sequences=False, init='glorot_normal',
-               W_regularizer=l2(0.01)))
+model.add(LSTM(512, return_sequences=False, init='glorot_normal'))
 model.add(LeakyReLU(alpha=0.3))
 model.add(Dropout(0.2))
 
