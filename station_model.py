@@ -154,5 +154,5 @@ model.add(Activation('softmax'))
 rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-06)
 
 model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
-model.fit(min_train_X, min_train_y, batch_size=128, nb_epoch=100,
+model.fit(min_train_X, min_train_y, batch_size=1024, nb_epoch=100,
           validation_split=0.1, show_accuracy=True)
