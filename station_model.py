@@ -121,7 +121,7 @@ def get_one_hot_index(vec):
 # print(max_X[0, :, :])
 # print(max_y[0, :])
 
-split = num_days/4
+split = int(num_days/4)
 
 min_train_X = min_X[:-split, :, :]
 min_train_y = min_y[:-split, :]
@@ -138,12 +138,12 @@ dataset = [min_train_X, min_train_y, min_test_X, min_test_y,
 names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
          'max_train_X', 'max_train_y', 'max_test_X', 'max_test_y']
 
+h5f = h5py.File('station_data.h5', 'w')
 for data, name in zip(dataset, names):
-    h5f = h5py.File(name + '.h5', 'w')
     h5f.create_dataset(name, data=data)
-    h5f.close()
+h5f.close()
 
-print('Build min model...')
+'''print('Build min model...')
 model = Sequential()
 
 model.add(LSTM(512, return_sequences=True,
@@ -166,4 +166,4 @@ rmsprop = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-06)
 
 model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
 model.fit(min_train_X, min_train_y, batch_size=2048, nb_epoch=5000,
-          validation_split=0.1, show_accuracy=True)
+          validation_split=0.1, show_accuracy=True)'''
