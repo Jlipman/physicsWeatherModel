@@ -9,6 +9,7 @@ names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
 
 h5f = h5py.File('station_data.h5', 'w')
 min_train_X = h5f['min_train_X'][:]
+min_train_y = h5f['min_train_y'][:]
 min_spread = len(min_train_X[0, 0, :])
 
 # Sequence Length
