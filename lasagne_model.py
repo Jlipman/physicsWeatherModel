@@ -33,6 +33,18 @@ NUM_EPOCHS = 50
 # Batch Size
 BATCH_SIZE = 128
 
+def iterate_minibatches(inputs, targets, batchsize=128, shuffle=True):
+    assert len(inputs) == len(targets)
+    if shuffle:
+        indices = np.arange(len(inputs))
+        np.random.shuffle(indices)
+    for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batchsize]
+        else:
+            excerpt = slice(start_idx, start_idx + batchsize)
+        yield inputs[excerpt], targets[excerpt]
+
 l_in = lasagne.layers.InputLayer(shape=(None, None, min_spread))
 
 l_forward_1 = lasagne.layers.LSTMLayer(
@@ -50,7 +62,7 @@ l_out = lasagne.layers.DenseLayer(
     W = lasagne.init.Normal(),
     nonlinearity=lasagne.nonlinearities.softmax)
 
-target_values = T.ivector('target_output')
+target_values = T.imatrix('target_output')
 network_output = lasagne.layers.get_output(l_out)
 
 cost = T.nnet.categorical_crossentropy(network_output,target_values).mean()
@@ -65,6 +77,11 @@ compute_cost = theano.function([l_in.input_var, target_values], cost, allow_inpu
 # probs = theano.function([l_in.input_var],network_output,allow_input_downcast=True)
 
 for epoch in range(0, NUM_EPOCHS):
-    cost = train(min_train_X, min_train_y)
-    print('Epoch: ' + str(epoch) + ' | Cost: ' + str(cost))
+    train_err = 0
+    train_batches = 0
+    for batch in iterate_minibatches(min_train_X, min_train_y):
+        inputs, targets = batch
+        train_err += train(inputs, targets)
+        train_batches += 1
+    print('Epoch: ' + str(epoch) + ' | Loss: ' + str(train_err / train_batches))
 
