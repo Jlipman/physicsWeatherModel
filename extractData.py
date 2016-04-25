@@ -38,24 +38,24 @@ def extractData(filename):
 
     def get_closest(i, days_list, position):
         j = i
-        while j >= 0 and days_list[j][position] == -1000:
+        while j >= 0 and days_list[j][position] == -999.9:
             j -= 1
-        j_correct = not days_list[j][position] == -1000
+        j_correct = not days_list[j][position] == -999.9
         k = i
-        while k < len(days_list) - 1 and days_list[k][position] == -1000:
+        while k < len(days_list) - 1 and days_list[k][position] == -999.9:
             k += 1
-        k_correct = not days_list[k][position] == -1000
+        k_correct = not days_list[k][position] == -999.9
         if j_correct and (i - j < k - i or not k_correct):
             return days_list[j][position]
         else:
             return days_list[k][position]
 
     for i, day in enumerate(days_list):
-        if day[1] == -1000:
+        if day[1] == -999.9:
             closest_min = get_closest(i, days_list, 1)
             days_list[i] = (day[0], closest_min, day[2])
         day = days_list[i]
-        if day[2] == -1000:
+        if day[2] == -999.9:
             closest_max = get_closest(i, days_list, 2)
             days_list[i] = (day[0], day[1], closest_max)
 

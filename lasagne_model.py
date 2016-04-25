@@ -7,10 +7,13 @@ import lasagne
 names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
          'max_train_X', 'max_train_y', 'max_test_X', 'max_test_y']
 
-h5f = h5py.File('station_data.h5', 'w')
-min_train_X = h5f['min_train_X'][:]
-min_train_y = h5f['min_train_y'][:]
+h5f = h5py.File('station_data.h5', 'r')
+print(h5f.name)
+min_train_X = h5f['.']['min_train_X'].value
+min_train_y = h5f['.']['min_train_y'].value
+h5f.close()
 min_spread = len(min_train_X[0, 0, :])
+print('Min spread: ' + str(min_spread))
 
 # Sequence Length
 SEQ_LENGTH = len(min_train_X[0, :, 0])
@@ -59,10 +62,9 @@ print("Compiling functions ...")
 train = theano.function([l_in.input_var, target_values], cost, updates=updates, allow_input_downcast=True)
 compute_cost = theano.function([l_in.input_var, target_values], cost, allow_input_downcast=True)
 
-probs = theano.function([l_in.input_var],network_output,allow_input_downcast=True)
+# probs = theano.function([l_in.input_var],network_output,allow_input_downcast=True)
 
 for epoch in range(0, NUM_EPOCHS):
     cost = train(min_train_X, min_train_y)
     print('Epoch: ' + str(epoch) + ' | Cost: ' + str(cost))
 
-h5f.close()
