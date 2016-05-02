@@ -3,6 +3,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import lasagne
+from lasagne.regularization import regularize_layer_params, l2
 
 names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
          'max_train_X', 'max_train_y', 'max_test_X', 'max_test_y']
@@ -32,7 +33,10 @@ print('Min spread: ' + str(min_spread))
 SEQ_LENGTH = len(min_train_X[0, :, 0])
 
 # Dropout Value
-DROPOUT_VAL = 0.5
+DROPOUT_VAL = 0.7
+
+# L2 Regularization Value
+L2_REG = 1e-4
 
 # Number of units in the two hidden (LSTM) layers
 N_HIDDEN = 512
@@ -84,10 +88,13 @@ l_out = lasagne.layers.DenseLayer(
 
 net = l_out
 
+l2_penalty = regularize_layer_params([l_forward_1, l_forward_2, l_out], l2) * L2_REG
+
 target_values = T.imatrix('target_output')
 network_output = lasagne.layers.get_output(net)
 
 loss = T.nnet.categorical_crossentropy(network_output, target_values).mean()
+loss += l2_penalty
 
 all_params = lasagne.layers.get_all_params(l_out, trainable=True)
 updates = lasagne.updates.adagrad(loss, all_params, LEARNING_RATE)
@@ -122,6 +129,5 @@ for epoch in range(0, NUM_EPOCHS):
         test_batches += 1
     print('Val Loss: ' + str(test_loss / test_batches) + ' | Val Acc: ' + str(test_acc / test_batches))
 
-h5f = h5py.File('lasagne_weights.h5', 'w')
-h5f.create_dataset('weights', data=lasagne.layers.get_all_params(l_out))
-h5f.close()
+params = lasagne.layers.get_all_param_values([l_forward_1, l_forward_2, l_out])
+np.savez('lasagne_weights.npz', *params)
