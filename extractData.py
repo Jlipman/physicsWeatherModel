@@ -1,5 +1,5 @@
-from pylab import *
-import time
+# from pylab import *
+# import time
 def extractData(filename):
     with open(filename) as file:
         text = file.read()
@@ -61,5 +61,5 @@ def extractData(filename):
 
     for i, day in enumerate(days_list):
         days_list[i] = (day[0], round(day[1]), round(day[2]))
-        print(days_list[i])
+        # print(days_list[i])
     return days_list

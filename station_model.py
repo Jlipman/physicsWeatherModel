@@ -1,11 +1,17 @@
 import numpy as np
-import h5py
+# import h5py
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation, Dropout
+from keras.layers.advanced_activations import LeakyReLU
+from keras.layers.recurrent import LSTM
+from keras.optimizers import RMSprop
+from keras.regularizers import l2
 
 from extractData import extractData
 
 days_list = extractData('chicago_summaries.dly')
 num_days = len(days_list)
-# print(num_days)
+print('Num days: ' + str(num_days))
 mins = [day[1] for day in days_list]
 maxs = [day[2] for day in days_list]
 min_min = min(mins)
@@ -24,10 +30,10 @@ print('Min spread: ' + str(min_spread))
 print('Max spread: ' + str(max_spread))
 
 timesteps = 10
-min_X = np.zeros((num_days-timesteps, timesteps, min_spread))
-min_y = np.zeros((num_days-timesteps, min_spread))
-max_X = np.zeros((num_days-timesteps, timesteps, min_spread))
-max_y = np.zeros((num_days-timesteps, max_spread))
+min_X = np.zeros((num_days - timesteps, timesteps, min_spread))
+min_y = np.zeros((num_days - timesteps, min_spread))
+max_X = np.zeros((num_days - timesteps, timesteps, min_spread))
+max_y = np.zeros((num_days - timesteps, max_spread))
 for i in range(timesteps, num_days):
     day = days_list[i]
     example_num = i - timesteps
@@ -54,7 +60,7 @@ def get_one_hot_index(vec):
 # print(min_y[0, :])
 # print(max_X[0, :, :])
 # print(max_y[0, :])
-split = int(num_days/4)
+split = int(num_days / 4)
 
 min_train_X = min_X[:-split, :, :]
 min_train_y = min_y[:-split, :]
@@ -71,13 +77,13 @@ dataset = [min_train_X, min_train_y, min_test_X, min_test_y,
 names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
          'max_train_X', 'max_train_y', 'max_test_X', 'max_test_y']
 
-h5f = h5py.File('station_data.h5', 'a')
+'''h5f = h5py.File('station_data.h5', 'a')
 for data, name in zip(dataset, names):
     h5f.create_dataset(name, data=data)
 print(h5f.name)
-h5f.close()
+h5f.close()'''
 
-'''model = Sequential()
+model = Sequential()
 
 print('Build min model...')
 model.add(LSTM(512, return_sequences=True,
@@ -101,4 +107,3 @@ rmsprop = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-06)
 model.compile(loss='categorical_crossentropy', optimizer=rmsprop)
 model.fit(min_train_X, min_train_y, batch_size=2048, nb_epoch=5000,
           validation_split=0.1, show_accuracy=True)
-'''

@@ -9,8 +9,13 @@ names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
 
 h5f = h5py.File('station_data.h5', 'r')
 print(h5f.name)
-min_train_X = h5f['.']['min_train_X'].value
-min_train_y = h5f['.']['min_train_y'].value
+val_split = 18000
+min_train_X = h5f['.']['min_train_X'].value[:val_split]
+min_train_y = h5f['.']['min_train_y'].value[:val_split]
+min_val_X = h5f['.']['min_train_X'].value[val_split:]
+min_val_y = h5f['.']['min_train_y'].value[val_split:]
+min_test_X = h5f['.']['min_test_X'].value
+min_test_y = h5f['.']['min_test_y'].value
 h5f.close()
 min_spread = len(min_train_X[0, 0, :])
 print('Min spread: ' + str(min_spread))
@@ -59,20 +64,27 @@ l_forward_slice = lasagne.layers.SliceLayer(l_forward_2, -1, 1)
 
 l_out = lasagne.layers.DenseLayer(
     l_forward_slice, num_units=min_spread,
-    W = lasagne.init.Normal(),
+    W=lasagne.init.Normal(),
     nonlinearity=lasagne.nonlinearities.softmax)
 
+net = l_out
+
 target_values = T.imatrix('target_output')
-network_output = lasagne.layers.get_output(l_out)
+network_output = lasagne.layers.get_output(net)
 
-cost = T.nnet.categorical_crossentropy(network_output,target_values).mean()
+loss = T.nnet.categorical_crossentropy(network_output, target_values).mean()
 
-all_params = lasagne.layers.get_all_params(l_out,trainable=True)
-updates = lasagne.updates.adagrad(cost, all_params, LEARNING_RATE)
+all_params = lasagne.layers.get_all_params(l_out, trainable=True)
+updates = lasagne.updates.adagrad(loss, all_params, LEARNING_RATE)
+
+test_output = lasagne.layers.get_output(net, deterministic=True)
+test_loss = T.nnet.categorical_crossentropy(test_output, target_values).mean()
+test_acc = T.mean(T.eq(T.argmax(test_output, axis=1), target_values),
+                       dtype=theano.config.floatX)
 
 print("Compiling functions ...")
-train = theano.function([l_in.input_var, target_values], cost, updates=updates, allow_input_downcast=True)
-compute_cost = theano.function([l_in.input_var, target_values], cost, allow_input_downcast=True)
+train_fn = theano.function([l_in.input_var, target_values], loss, updates=updates, allow_input_downcast=True)
+test_fn = theano.function([l_in.input_var, target_values], [test_loss, test_acc], updates=updates, allow_input_downcast=True)
 
 # probs = theano.function([l_in.input_var],network_output,allow_input_downcast=True)
 
@@ -81,7 +93,20 @@ for epoch in range(0, NUM_EPOCHS):
     train_batches = 0
     for batch in iterate_minibatches(min_train_X, min_train_y):
         inputs, targets = batch
-        train_err += train(inputs, targets)
+        train_err += train_fn(inputs, targets)
         train_batches += 1
     print('Epoch: ' + str(epoch) + ' | Loss: ' + str(train_err / train_batches))
+    test_loss = 0
+    test_acc = 0
+    test_batches = 0
+    for batch in iterate_minibatches(min_val_X, min_val_y):
+        inputs, targets = batch
+        [loss, acc] = test_fn(inputs, targets)
+        test_loss += loss
+        test_acc += acc
+        test_batches += 1
+    print('Val Loss: ' + str(test_loss / test_batches) + ' | Val Acc: ' + str(test_acc / test_batches))
 
+h5f = h5py.File('lasagne_weights.h5', 'rw')
+h5f.create_dataset('weights', data=lasagne.layers.get_all_params(l_out))
+h5f.close()
