@@ -9,19 +9,30 @@ names = ['min_train_X', 'min_train_y', 'min_test_X', 'min_test_y',
 
 h5f = h5py.File('station_data.h5', 'r')
 print(h5f.name)
-val_split = 18000
+val_split = 13000
 min_train_X = h5f['.']['min_train_X'].value[:val_split]
+print(len(min_train_X))
+print(np.shape(min_train_X))
 min_train_y = h5f['.']['min_train_y'].value[:val_split]
+print(len(min_train_y))
+print(np.shape(min_train_y))
 min_val_X = h5f['.']['min_train_X'].value[val_split:]
+print(len(min_val_X))
 min_val_y = h5f['.']['min_train_y'].value[val_split:]
+print(len(min_val_y))
 min_test_X = h5f['.']['min_test_X'].value
 min_test_y = h5f['.']['min_test_y'].value
 h5f.close()
 min_spread = len(min_train_X[0, 0, :])
 print('Min spread: ' + str(min_spread))
 
+# Hyperparameters:
+
 # Sequence Length
 SEQ_LENGTH = len(min_train_X[0, :, 0])
+
+# Dropout Value
+DROPOUT_VAL = 0.5
 
 # Number of units in the two hidden (LSTM) layers
 N_HIDDEN = 512
@@ -56,11 +67,15 @@ l_forward_1 = lasagne.layers.LSTMLayer(
     l_in, N_HIDDEN, grad_clipping=GRAD_CLIP,
     nonlinearity=lasagne.nonlinearities.tanh)
 
+l_dropout_1 = lasagne.layers.DropoutLayer(l_forward_1, DROPOUT_VAL)
+
 l_forward_2 = lasagne.layers.LSTMLayer(
-    l_forward_1, N_HIDDEN, grad_clipping=GRAD_CLIP,
+    l_dropout_1, N_HIDDEN, grad_clipping=GRAD_CLIP,
     nonlinearity=lasagne.nonlinearities.tanh)
 
-l_forward_slice = lasagne.layers.SliceLayer(l_forward_2, -1, 1)
+l_dropout_2 = lasagne.layers.DropoutLayer(l_forward_2, DROPOUT_VAL)
+
+l_forward_slice = lasagne.layers.SliceLayer(l_dropout_2, -1, 1)
 
 l_out = lasagne.layers.DenseLayer(
     l_forward_slice, num_units=min_spread,
@@ -79,12 +94,12 @@ updates = lasagne.updates.adagrad(loss, all_params, LEARNING_RATE)
 
 test_output = lasagne.layers.get_output(net, deterministic=True)
 test_loss = T.nnet.categorical_crossentropy(test_output, target_values).mean()
-test_acc = T.mean(T.eq(T.argmax(test_output, axis=1), target_values),
+test_acc = T.mean(T.eq(T.argmax(test_output, axis=1), T.argmax(target_values, axis=1)),
                        dtype=theano.config.floatX)
 
 print("Compiling functions ...")
 train_fn = theano.function([l_in.input_var, target_values], loss, updates=updates, allow_input_downcast=True)
-test_fn = theano.function([l_in.input_var, target_values], [test_loss, test_acc], updates=updates, allow_input_downcast=True)
+test_fn = theano.function([l_in.input_var, target_values], [test_loss, test_acc], allow_input_downcast=True)
 
 # probs = theano.function([l_in.input_var],network_output,allow_input_downcast=True)
 
@@ -107,6 +122,6 @@ for epoch in range(0, NUM_EPOCHS):
         test_batches += 1
     print('Val Loss: ' + str(test_loss / test_batches) + ' | Val Acc: ' + str(test_acc / test_batches))
 
-h5f = h5py.File('lasagne_weights.h5', 'rw')
+h5f = h5py.File('lasagne_weights.h5', 'w')
 h5f.create_dataset('weights', data=lasagne.layers.get_all_params(l_out))
 h5f.close()
